@@ -54,7 +54,9 @@ export class WebSocketManager extends EventEmitter {
 
   private setListeners() {
     this.httpServer.on('upgrade', (request, socket, head) => {
+      logger.info(`WebSocketManager upgrade request:${request}\nhead:${head}`);
       this.authenticate(request, (authenticateInfo) => {
+        logger.info(`WebSocketManager  authenticate  authenticateInfo:${JSON.stringify(authenticateInfo)}`);
         if (authenticateInfo.type) {
           this.wss.handleUpgrade(request, socket, head, (ws: any) => {
             ws.type = authenticateInfo.type;
@@ -89,6 +91,7 @@ export class WebSocketManager extends EventEmitter {
     let extData = null;
     for(let i = 0; i < clientRequestListeners.length; i ++) {
       const r = await clientRequestListeners[i](req);
+      logger.info(`clientRequestListener: ${clientRequestListeners[i]} authenticate:${JSON.stringify(r)}`);
       type = r.type || type;
       extData = r.extData || extData;
     }
@@ -98,24 +101,27 @@ export class WebSocketManager extends EventEmitter {
   private async onWebSocketConnection(client: WebSocketExt, req: http.IncomingMessage) {
     client.ip = req.connection.remoteAddress || (req.headers['x-forwarded-for'] as any || '').split(/\s*,\s*/)[0];
     client.ip = client.ip.replace(/[^0-9\.]/ig, '');
-    logger.info('WebSocket.Server connection client ip -> ' + client.ip + ' url -> ' + req.url);
+    logger.info(`WebSocket onWebSocketConnection client ip -> ${client.ip} url -> ${req.url}`);
 
     client.addListener('close', (code: number, message: string) => {
       logger.info('WebSocket.Client close ip -> ' + client.ip + ' code -> ' + code + ' message-> ' + message);
       clientStatusChangeListeners.forEach((listener) => {
+        logger.info(`WebSocket onWebSocketConnection close listener: ${listener}`);
         listener(client, 'close');
       });
     });
 
     client.addListener('error', (err: Error) => {
-      logger.info('WebSocket.Client error ip -> ' + client.ip + ' message-> ' + err.message);
+      logger.error(`WebSocket.Client error ip -> ${client.ip},ERROR:${err}`);
       clientStatusChangeListeners.forEach((listener) => {
+        logger.info(`WebSocket onWebSocketConnection error listener: ${listener}`);
         listener(client, 'error');
       });
     });
 
     client.addListener('message', (data: WebSocket.Data) => {
       const message = JSON.parse(data as string);
+      logger.info(`WebSocket.Client message：${JSON.stringify(message)}`);
       if (message.type === 'respond') {
         const answer = messageAnswer.get(message.message_id);
         answer && answer(null, message);
@@ -125,6 +131,7 @@ export class WebSocketManager extends EventEmitter {
         });
       } else {
         clientMessageListeners.forEach((listener) => {
+          logger.info(`WebSocket onWebSocketConnection client Message listener: ${listener} \tdata:${data}`);
           listener(client, data);
         });
       }
@@ -137,6 +144,7 @@ export class WebSocketManager extends EventEmitter {
 
     logger.info('WebSocket.Client open ip -> ' + client.ip);
     clientStatusChangeListeners.forEach((listener) => {
+      logger.info(`WebSocket onWebSocketConnection client Status Change listener: ${listener}`);
       listener(client, 'open');
     });
   }
@@ -169,6 +177,9 @@ export class WebSocketManager extends EventEmitter {
         }
       });
     }
+    logger.info(`WebSocketManager sendMessage:message${JSON.stringify(message)}
+    \tclient.readyState:${client.readyState}
+    \ncb:${cb}`);
   }
 
   public broadcast(message: object) {

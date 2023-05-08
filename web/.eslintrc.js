@@ -1,14 +1,17 @@
 module.exports = {
   root: true,
+
   parserOptions: {
     parser: 'babel-eslint',
     sourceType: 'module'
   },
+
   env: {
     browser: true,
     node: true,
     es6: true,
   },
+
   extends: ['plugin:vue/recommended', 'eslint:recommended'],
 
   // add your custom rules here
@@ -196,5 +199,26 @@ module.exports = {
       objectsInObjects: false
     }],
     'array-bracket-spacing': [2, 'never']
-  }
+  },
+
+  overrides: [
+    {
+      files: [
+        '**/__tests__/*.{j,t}s?(x)',
+        '**/tests/unit/**/*.spec.{j,t}s?(x)'
+      ],
+      env: {
+        jest: true
+      }
+    },
+    {
+      files: [
+        '**/__tests__/*.{j,t}s?(x)',
+        '**/tests/unit/**/*.spec.{j,t}s?(x)'
+      ],
+      env: {
+        jest: true
+      }
+    }
+  ]
 }

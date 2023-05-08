@@ -4,8 +4,10 @@ import * as moment from 'moment';
 import unless = require('koa-unless');
 // import { redis } from '../utils/redis';
 import { ResultUtils } from '@/utils/result-utils';
+import getLogger from '@/utils/log4js';
 
 export const secret = 'hahahahahah' + moment().format('YYYYMMDD');
+const logger = getLogger('app-jwt');
 
 export const sign = (data: any): string => {
   const token = jwt.sign(data, secret, { expiresIn: '6h' });
@@ -25,6 +27,8 @@ export const verify = (ctx: Koa.Context): Promise<string | any> => {
 
 export async function verifyToken(token: string) {
   return new Promise((resolve, reject) => {
+    logger.info("token:"+token);
+    logger.info("secret:"+secret);
     jwt.verify(token, secret, (error: Error, decoded: any) => {
       if (error) {
         error.message = JWTTokenError[error.name];

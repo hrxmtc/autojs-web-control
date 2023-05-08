@@ -23,6 +23,7 @@ export class DeviceManager {
     }
     WebSocketManager.getInstance().addClientRequestListeners(async (req) => {
       const params = querystring.parse(req.url.replace('/?', ''));
+      logger.info(`DeviceManager Client Request  query param:${JSON.stringify(params)}`);
       if (params.token) {
         return { type: null };
       }
@@ -42,16 +43,22 @@ export class DeviceManager {
     });
 
     WebSocketManager.getInstance().addClientStatusChangeListener((client, status) => {
+      logger.info(`DeviceManager Client Status :${status},type:${client.type}`);
       if (status === 'open' && client.type === 'device') {
-        WebSocketManager.getInstance().sendMessage(client, { type: 'hello', data: { server_version: 2 } });
+        WebSocketManager.getInstance().sendMessage(client, { type: 'hello', data: 'ok',debug:false,version: 11090 });
       }
     });
 
     WebSocketManager.getInstance().addClientMessageListener((client, data) => {
       if (client.type === 'device') {
         const message = JSON.parse(data as string);
+        logger.info(`DeviceManager addClientMessageListener message :${JSON.stringify(message)}`);
         if (message.type === 'hello') {
           // client.extData.device_name = message.data.device_name;
+        }
+        if(message.type === 'ping'){
+          const data = message.data;
+          WebSocketManager.getInstance().sendMessage(client, { type: 'pong', data: data});
         }
       }
     });

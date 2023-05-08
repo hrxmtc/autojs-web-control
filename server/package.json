@@ -4,6 +4,7 @@
   "description": "application TypeScript starter repository",
   "license": "MIT",
   "scripts": {
+    "start": "node ./modules/default/main.js",
     "build": "tsc -p tsconfig.build.json",
     "clean": "ts-clean",
     "lint": "tslint --fix -p tsconfig.json -c tslint.json"
@@ -35,8 +36,8 @@
     "moment": "^2.24.0",
     "mysql": "^2.16.0",
     "reflect-metadata": "^0.1.12",
-    "soul-orm": "git+https://github.com/zrk1993/soul-orm.git",
-    "souljs": "git+https://github.com/zrk1993/souljs.git",
+    "soul-orm": "git+https://github.com/hrxmtc/soul-orm.git",
+    "souljs": "git+https://github.com/hrxmtc/souljs.git",
     "sqlstring": "^2.3.1",
     "swagger-ui-dist": "^3.20.5",
     "uuid": "^3.3.2",
