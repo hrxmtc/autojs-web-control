@@ -7,7 +7,10 @@ import moment = require('moment');
 const logger = getLogger('DeviceManager');
 
 export class DeviceManager {
-    static instance: DeviceManager;
+    private static instance: DeviceManager;
+
+    private constructor() {
+    }
 
     public static getInstance() {
         if (!DeviceManager.instance) {
@@ -19,52 +22,49 @@ export class DeviceManager {
     public static init() {
         if (!DeviceManager.instance) {
             DeviceManager.instance = new DeviceManager();
+            WebSocketServer.getInstance().addClientRequestListener(DeviceManager.handleClientRequest.bind(this));
+            WebSocketServer.getInstance().addClientMessageListener(DeviceManager.handleClientMessage.bind(this));
         }
-        WebSocketServer.getInstance().addClientRequestListeners(this.handleClientRequest());
-        WebSocketServer.getInstance().addClientMessageListener(this.handleClientMessage());
+
+        return DeviceManager.instance;
     }
 
-    static handleClientMessage() {
-        return (client, data) => {
-            if (client.type === 'device') {
-                const message = JSON.parse(data as string);
-                logger.info(`DeviceManager client message :${JSON.stringify(message)}`);
-                if (message.type === 'hello') {
-                    WebSocketServer.getInstance().sendMessage(client, {
-                        type: 'hello',
-                        data: 'ok',
-                        debug: false,
-                        version: 11090
-                    });
-                }
-                if (message.type === 'ping') {
-                    const data = message.data;
-                    WebSocketServer.getInstance().sendMessage(client, {type: 'pong', data: data});
-                }
+    private static handleClientMessage(client, data) {
+        if (client.type === 'device') {
+            const message = JSON.parse(data as string);
+            logger.info(`DeviceManager client message: ${JSON.stringify(message)}`);
+            if (message.type === 'hello') {
+                WebSocketServer.getInstance().sendMessage(client, {
+                    type: 'hello',
+                    data: 'ok',
+                    debug: false,
+                    version: 11090
+                });
             }
-        };
+            if (message.type === 'ping') {
+                const data = message.data;
+                WebSocketServer.getInstance().sendMessage(client, {type: 'pong', data: data});
+            }
+        }
     }
 
-    static handleClientRequest() {
-        return async (req) => {
-            const params = querystring.parse(req.url.replace('/?', ''));
-            logger.info(`DeviceManager Client Request  query param:${JSON.stringify(params)}`);
-            if (params.token) {
-                return {type: null};
-            }
+    private static async handleClientRequest(request) {
+        const params = querystring.parse(request.url.replace('/?', ''));
+        logger.info(`DeviceManager Client Request query param: ${JSON.stringify(params)}`);
+        if (params.token) {
+            return {type: null};
+        }
+        const ip = (request.connection.remoteAddress || (request.headers['x-forwarded-for'] as any || '').split(/\s*,\s*/)[0]).replace(/[^0-9\.]/ig, '');
+        const deviceName = params.name || ip;
+        let device = await DeviceModel.getByDeviceName(deviceName as string);
+        if (!device) {
+            await DeviceModel.insert({name: deviceName, ip, create_time: moment().format('YYYY-MM-DD HH:mm:ss')});
+        }
 
-            const ip = (req.connection.remoteAddress || (req.headers['x-forwarded-for'] as any || '').split(/\s*,\s*/)[0]).replace(/[^0-9\.]/ig, '');
-            const deviceName = params.name || ip;
-            let device = await DeviceModel.getByDeviceName(deviceName as string);
-            if (!device) {
-                await DeviceModel.insert({name: deviceName, ip, create_time: moment().format('YYYY-MM-DD HH:mm:ss')});
-            }
+        device = await DeviceModel.getByDeviceName(deviceName);
+        await DeviceModel.updateById(device.device_id, {connect_time: moment().format('YYYY-MM-DD HH:mm:ss')});
 
-            device = await DeviceModel.getByDeviceName(deviceName);
-            await DeviceModel.updateById(device.device_id, {connect_time: moment().format('YYYY-MM-DD HH:mm:ss')});
-
-            return {type: 'device', extData: device};
-        };
+        return {type: 'device', extData: device};
     }
 
     public getOnlineDevices() {

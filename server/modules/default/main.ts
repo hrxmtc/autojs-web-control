@@ -10,7 +10,7 @@ import getLogger from '@/utils/log4js';
 import errorHandle from '@/middleware/error-handle';
 import {WebSocketServer} from '@/service/WebSocketServer';
 import { DeviceManager } from '@/service/DeviceManager';
-import { AdminSocketManager } from '@/service/AdminSocketManager';
+import { WebAdminManager } from '@/service/WebAdminManager';
 import { SchedulerManager } from '@/service/SchedulerManager';
 import config from './config';
 import * as router from './router';
@@ -32,7 +32,7 @@ async function main() {
 
   WebSocketServer.init(app.getHttpServer());
   DeviceManager.init();
-  AdminSocketManager.init();
+  WebAdminManager.init();
   await SchedulerManager.init();
 }
 
