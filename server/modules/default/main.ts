@@ -8,7 +8,7 @@ import { createApplication } from '@/common/application';
 import { NODE_ENV } from '@/utils/enums';
 import getLogger from '@/utils/log4js';
 import errorHandle from '@/middleware/error-handle';
-import { WebSocketManager } from '@/service/WebSocketManager';
+import {WebSocketServer} from '@/service/WebSocketServer';
 import { DeviceManager } from '@/service/DeviceManager';
 import { AdminSocketManager } from '@/service/AdminSocketManager';
 import { SchedulerManager } from '@/service/SchedulerManager';
@@ -30,7 +30,7 @@ async function main() {
 
   app.listen(config.port);
 
-  WebSocketManager.init(app.getHttpServer());
+  WebSocketServer.init(app.getHttpServer());
   DeviceManager.init();
   AdminSocketManager.init();
   await SchedulerManager.init();
